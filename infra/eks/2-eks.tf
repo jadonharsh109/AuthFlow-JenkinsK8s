@@ -24,7 +24,7 @@ module "eks" {
 
   # Default configuration for managed node groups
   eks_managed_node_group_defaults = {
-    disk_size = 50
+    disk_size = 30
   }
 
   # Configuration for managed node groups within the EKS cluster
@@ -36,14 +36,14 @@ module "eks" {
       max_size     = 5
 
       # EC2 instance types and capacity type for the node group
-      instance_types = ["t3.medium"]
+      instance_types = ["t3."]
       capacity_type  = "ON_DEMAND"
     }
 
     # Spot instance node group configuration
     spot = {
-      desired_size = 1
-      min_size     = 1
+      desired_size = 2
+      min_size     = 2
       max_size     = 5
 
       # Labels and taints for identifying and managing spot instances
