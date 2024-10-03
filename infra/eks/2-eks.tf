@@ -36,7 +36,7 @@ module "eks" {
       max_size     = 5
 
       # EC2 instance types and capacity type for the node group
-      instance_types = ["t3."]
+      instance_types = ["t3.small"]
       capacity_type  = "ON_DEMAND"
     }
 

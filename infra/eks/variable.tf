@@ -34,6 +34,12 @@ variable "public_subnets" {
   default     = ["10.0.64.0/19", "10.0.96.0/19"]
 }
 
+variable "user_names" {
+  description = "List of IAM user names to create"
+  type        = list(string)
+  default     = ["eks_user1", "eks_user2", "eks_user3"]
+}
+
 variable "aws_account_id" {
   default = "998070853703"
 }
