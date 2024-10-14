@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  namespace: default
+  labels:
+    app: frontend
+spec:
+  selector:
+    matchLabels:
+      app: frontend
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      initContainers:
+      - name: check-services
+        image: curlimages/curl:7.85.0  # Lightweight image with curl
+        command: ["/bin/sh", "-c"]
+        args:
+          - >
+            until curl -sf -o /dev/null http://ingress-nginx-controller.ingress-nginx.svc.cluster.local/auth/working && 
+                  curl -sf -o /dev/null http://ingress-nginx-controller.ingress-nginx.svc.cluster.local/checklist/working && 
+                  curl -sf -o /dev/null http://ingress-nginx-controller.ingress-nginx.svc.cluster.local/pomodoro/working && 
+                  curl -sf -o /dev/null http://ingress-nginx-controller.ingress-nginx.svc.cluster.local/karbanboard/working;
+            do
+              echo "Waiting for services to be reachable...";
+              sleep 5;
+            done;
+            echo "All services are reachable!";
+        restartPolicy: Always
+      containers:
+      - name: frontend-container
+        image: kka01/timeshaasan-frontend:latest
+        resources:
+          requests:
+            cpu: 200m
+            memory: 200Mi
+          limits:
+            cpu: 500m
+            memory: 500Mi
+        livenessProbe:
+          tcpSocket:
+            port: 3000
+          initialDelaySeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 10
+          timeoutSeconds: 2
+          successThreshold: 1
+          failureThreshold: 3
+          periodSeconds: 10
+        ports:
+        - containerPort: 3000
+          name: frontend-port
+        env:
+          - name: REACT_APP_DOMAIN
+            value: "ingress-nginx-controller.ingress-nginx.svc.cluster.local"
+          - name: REACT_APP_GoogleOAuth
+            value: "714026040429-ah8ji0rvj42m8hhdtuf4uqgoimg7dgld.apps.googleusercontent.com"
+          - name: client_id
+            value: "714026040429-ah8ji0rvj42m8hhdtuf4uqgoimg7dgld.apps.googleusercontent.com"
+          # Auth
+          - name: REACT_APP_TOKEN
+            value: "/auth/api/v1/token"
+          - name: REACT_APP_ADD_USER
+            value: "/auth/api/v1/user"
+          # Pomodoro
+          - name: REACT_APP_GET_FOCUS
+            value: "/pomodoro/api/v1/focus/"
+          - name: REACT_APP_UPDATE_FOCUS
+            value: "/pomodoro/api/v1/focus/"
+          # Kanban Board
+          - name: REACT_APP_Move_Task
+            value: "/kanbanboard/api/v1/todo/move/"
+          - name: REACT_APP_ADD_TASK
+            value: "/kanbanboard/api/v1/todo/"
+          - name: REACT_APP_REMOVE_TASK
+            value: "/kanbanboard/api/v1/todo/"
+          - name: REACT_APP_EDIT_TASK
+            value: "/kanbanboard/api/v1/todo/edit/"
+          - name: REACT_APP_GET_Task
+            value: "/kanbanboard/api/v1/todo/"
+          # Checklist
+          - name: REACT_APP_GET_Checklist
+            value: "/checklist/api/v1/"
+          - name: REACT_APP_ADD_Checklist
+            value: "/checklist/api/v1/"
+          - name: REACT_APP_REMOVE_Checklist
+            value: "/checklist/api/v1/"
+          - name: REACT_APP_UPDATE_STATUS_Checklist
+            value: "/checklist/api/v1/"
+          - name: REACT_APP_UPDATE_EDIT_Checklist
+            value: "/checklist/api/v1/edit/"
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: default
+spec:
+  selector:
+    app: frontend
+  type: NodePort
+  ports:
+  - name: frontend-port
+    protocol: TCP
+    port: 3000
+    targetPort: 3000

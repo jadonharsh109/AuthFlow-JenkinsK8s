@@ -1,3 +1,28 @@
+resource "aws_iam_policy" "eks_node_ebs_policy" {
+  name        = "EKSNodeEBSPolicy"
+  description = "Allows EKS nodes to perform necessary EBS operations"
+
+  policy = jsonencode({
+    "Version" : "2012-10-17",
+    "Statement" : [
+      {
+        "Effect" : "Allow",
+        "Action" : [
+          "ec2:CreateVolume",
+          "ec2:AttachVolume",
+          "ec2:DetachVolume",
+          "ec2:DeleteVolume",
+          "ec2:DescribeVolumes",
+          "ec2:CreateTags",
+          "ec2:DescribeTags"
+        ],
+        "Resource" : "*"
+      }
+    ]
+  })
+}
+
+
 # Module for creating an Amazon EKS (Elastic Kubernetes Service) cluster
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
@@ -31,13 +56,17 @@ module "eks" {
   eks_managed_node_groups = {
     # General node group configuration
     general = {
-      desired_size = 1
-      min_size     = 1
+      desired_size = 3
+      min_size     = 3
       max_size     = 5
 
       # EC2 instance types and capacity type for the node group
-      instance_types = ["t3.small"]
+      instance_types = ["t3.medium"]
       capacity_type  = "ON_DEMAND"
+      iam_role_additional_policies = {
+        "custom_policy" = aws_iam_policy.eks_node_ebs_policy.arn
+      }
+
     }
 
     # Spot instance node group configuration
@@ -50,6 +79,10 @@ module "eks" {
       labels = {
         role = "spot"
       }
+      iam_role_additional_policies = {
+        "custom_policy" = aws_iam_policy.eks_node_ebs_policy.arn
+      }
+
 
       # EC2 instance types and capacity type for the spot instance node group
       instance_types = ["t3.medium"]
