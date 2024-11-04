@@ -1,10 +1,3 @@
-resource "aws_iam_role" "ebs_csi_driver" {
-  name = "EBSCSIDriverRole"
-
-  assume_role_policy = data.aws_iam_policy_document.eks_assume_ebs_role_policy.json
-}
-
-
 data "aws_iam_policy_document" "eks_assume_ebs_role_policy" {
   statement {
     effect = "Allow"
@@ -22,6 +15,11 @@ data "aws_iam_policy_document" "eks_assume_ebs_role_policy" {
       values   = ["system:serviceaccount:kube-system:ebs-csi-controller-sa"]
     }
   }
+}
+
+resource "aws_iam_role" "ebs_csi_driver" {
+  name               = "EBSCSIDriverRole"
+  assume_role_policy = data.aws_iam_policy_document.eks_assume_ebs_role_policy.json
 }
 
 resource "aws_iam_policy" "ebs_csi_driver_policy" {
@@ -65,6 +63,8 @@ resource "kubernetes_service_account" "ebs_csi_controller_sa" {
     name      = "ebs-csi-controller-sa"
     namespace = "kube-system"
   }
+
+  depends_on = [module.eks]
 }
 
 resource "helm_release" "aws_ebs_csi_driver" {
@@ -92,6 +92,19 @@ resource "helm_release" "aws_ebs_csi_driver" {
     name  = "node.serviceAccount.name"
     value = "ebs-csi-controller-sa"
   }
-  depends_on = [aws_iam_role.ebs_csi_driver]
+  depends_on = [aws_iam_role.ebs_csi_driver, kubernetes_service_account.ebs_csi_controller_sa]
+}
+
+resource "kubernetes_storage_class" "aws_ebs_csi_storage_class" {
+  metadata {
+    name = "ebs-storage"
+  }
+  storage_provisioner = "ebs.csi.aws.com"
+
+  volume_binding_mode = "WaitForFirstConsumer"
+  reclaim_policy      = "Delete"
+
+  depends_on = [helm_release.aws_ebs_csi_driver]
+
 }
 

@@ -57,11 +57,12 @@ resource "kubernetes_service_account" "nginx_ingress_controller_sa" {
     name      = "nginx-ingress-controller-sa"
     namespace = "kube-system"
   }
+  depends_on = [module.eks]
 }
 
 resource "helm_release" "nginx_ingress" {
   name       = "nginx-ingress"
-  namespace  = "kube-system" # You may choose another namespace if desired
+  namespace  = "kube-system"
   repository = "https://kubernetes.github.io/ingress-nginx"
   chart      = "ingress-nginx"
 
@@ -75,4 +76,6 @@ resource "helm_release" "nginx_ingress" {
     name  = "controller.serviceAccount.name"
     value = "nginx-ingress-controller-sa"
   }
+
+  depends_on = [kubernetes_service_account.nginx_ingress_controller_sa]
 }
