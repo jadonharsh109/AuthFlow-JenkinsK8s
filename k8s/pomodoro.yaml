@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name:  pomodoro-db
-  namespace: default
+  namespace: webapps
   labels:
     app:  pomodoro-db
 spec:
@@ -72,7 +72,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: pomodoro-db-service
-  namespace: default
+  namespace: webapps
 spec:
   selector:
     app: pomodoro-db
@@ -88,7 +88,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name:  pomodoro-deployment
-  namespace: default
+  namespace: webapps
   labels:
     app:  pomodoro
 spec:
@@ -109,14 +109,14 @@ spec:
       initContainers:
         - name: check-mongo
           image: busybox
-          command: ['sh','-c', 'until nslookup pomodoro-db-service.default.svc.cluster.local; do echo waiting for mydb; sleep 2; done;']
+          command: ['sh','-c', 'until nslookup pomodoro-db-service.webapps.svc.cluster.local; do echo waiting for mydb; sleep 2; done;']
         - name: check-kafka
           image: busybox
           command:
           - sh
           - -c
           - |
-            until nc -zv kafka-service.default.svc.cluster.local 9092; do
+            until nc -zv kafka-service.webapps.svc.cluster.local 9092; do
               echo "Waiting for Kafka to be ready..."
               sleep 2
             done
@@ -149,9 +149,9 @@ spec:
           periodSeconds: 10
         env:
         - name: DB_URI
-          value: mongodb://pomodoro-db-service.default.svc.cluster.local:27017
+          value: mongodb://pomodoro-db-service.webapps.svc.cluster.local:27017
         - name:  KAFKA_BROKER
-          value: "kafka-service.default.svc.cluster.local:9092"
+          value: "kafka-service.webapps.svc.cluster.local:9092"
         ports:
         - containerPort:  5004
           name:  pomodoro-port
@@ -163,7 +163,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: pomodoro-service
-  namespace: default
+  namespace: webapps
 spec:
   selector:
     app: pomodoro

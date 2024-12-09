@@ -95,16 +95,15 @@ resource "helm_release" "aws_ebs_csi_driver" {
   depends_on = [aws_iam_role.ebs_csi_driver, kubernetes_service_account.ebs_csi_controller_sa]
 }
 
+
 resource "kubernetes_storage_class" "aws_ebs_csi_storage_class" {
   metadata {
     name = "ebs-storage"
   }
   storage_provisioner = "ebs.csi.aws.com"
-
   volume_binding_mode = "WaitForFirstConsumer"
   reclaim_policy      = "Delete"
 
   depends_on = [helm_release.aws_ebs_csi_driver]
-
 }
 

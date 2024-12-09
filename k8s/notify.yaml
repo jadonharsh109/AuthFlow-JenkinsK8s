@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: notify-deployment
-  namespace: default
+  namespace: webapps
   labels:
     app: notify
 spec:
@@ -27,7 +27,7 @@ spec:
           - sh
           - -c
           - |
-            until nc -zv kafka-service.default.svc.cluster.local 9092; do
+            until nc -zv kafka-service.webapps.svc.cluster.local 9092; do
               echo "Waiting for Kafka to be ready..."
               sleep 2
             done
@@ -83,7 +83,7 @@ spec:
               name: timeshaasan-secrets
               key: smtp_password
         - name:  KAFKA_BROKER
-          value: "kafka-service.default.svc.cluster.local:9092"
+          value: "kafka-service.webapps.svc.cluster.local:9092"
 
 
 ---
@@ -92,7 +92,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: notify-service
-  namespace: default
+  namespace: webapps
 spec:
   selector:
     app: notify

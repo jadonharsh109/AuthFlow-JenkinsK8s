@@ -1,3 +1,4 @@
+# Define the Namespace for Jenkins
 resource "kubernetes_namespace" "jenkins_ns" {
   metadata {
     name = "jenkins"
@@ -6,9 +7,10 @@ resource "kubernetes_namespace" "jenkins_ns" {
 }
 
 resource "helm_release" "jenkins" {
-  name      = "jenkins"
-  chart     = "jenkinsci/jenkins"
-  namespace = kubernetes_namespace.jenkins_ns.metadata[0].name
+  name       = "jenkins"
+  repository = "https://charts.jenkins.io"
+  chart      = "jenkins"
+  namespace  = kubernetes_namespace.jenkins_ns.metadata[0].name
 
   set {
     name  = "controller.replicaCount"
@@ -16,13 +18,18 @@ resource "helm_release" "jenkins" {
   }
 
   set {
+    name  = "controller.serviceType"
+    value = "LoadBalancer"
+  }
+
+  set {
     name  = "persistence.size"
-    value = "50Gi"
+    value = "10Gi"
   }
 
   set {
     name  = "persistence.storageClass"
-    value = "ebs-storage"
+    value = kubernetes_storage_class.aws_ebs_csi_storage_class.metadata[0].name
   }
 
   // Enable agents and set dynamic configurations
@@ -56,5 +63,13 @@ resource "helm_release" "jenkins" {
     EOT
   }
 
-  depends_on = [kubernetes_storage_class.aws_ebs_csi_storage_class, kubernetes_namespace.jenkins_ns]
+  depends_on = [kubernetes_storage_class.aws_ebs_csi_storage_class, kubernetes_namespace.jenkins_ns, module.eks]
+}
+
+# Get the Jenkins LoadBalancer Service
+data "kubernetes_service" "jenkins_service" {
+  metadata {
+    name      = "jenkins"
+    namespace = kubernetes_namespace.jenkins_ns.metadata[0].name
+  }
 }

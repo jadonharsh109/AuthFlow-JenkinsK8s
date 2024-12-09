@@ -3,7 +3,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: auth-db
-  namespace: default
+  namespace: webapps
   labels:
     app: auth-db
 spec:
@@ -69,7 +69,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: auth-db-service
-  namespace: default
+  namespace: webapps
 spec:
   selector:
     app: auth-db
@@ -86,7 +86,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: auth-deployment
-  namespace: default
+  namespace: webapps
   labels:
     app: auth
 spec:
@@ -107,14 +107,14 @@ spec:
       initContainers:
       - name: check-mongo
         image: busybox
-        command: ['sh','-c', 'until nslookup auth-db-service.default.svc.cluster.local; do echo waiting for mydb; sleep 2; done;']
+        command: ['sh','-c', 'until nslookup auth-db-service.webapps.svc.cluster.local; do echo waiting for mydb; sleep 2; done;']
       - name: check-kafka
         image: busybox
         command:
         - sh
         - -c
         - |
-          until nc -zv kafka-service.default.svc.cluster.local 9092; do
+          until nc -zv kafka-service.webapps.svc.cluster.local 9092; do
             echo "Waiting for Kafka to be ready..."
             sleep 2
           done
@@ -147,11 +147,11 @@ spec:
           periodSeconds: 10
         env:
         - name: DB_URI
-          value: mongodb://auth-db-service.default.svc.cluster.local:27017
+          value: mongodb://auth-db-service.webapps.svc.cluster.local:27017
         - name: JWT_EXPIRES_IN
           value: 60d
         - name: KAFKA_BROKER
-          value: "kafka-service.default.svc.cluster.local:9092"
+          value: "kafka-service.webapps.svc.cluster.local:9092"
         - name: SECRET
           valueFrom:
             secretKeyRef:
@@ -168,7 +168,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: auth-service
-  namespace: default
+  namespace: webapps
 spec:
   selector:
     app: auth

@@ -110,11 +110,6 @@ resource "aws_iam_user_group_membership" "test_user1_membership" {
   groups = [aws_iam_group.read_only_group.name]
 }
 
-# Create Access Keys for Test User 1
-resource "aws_iam_access_key" "readonly_user_access_key" {
-  user = aws_iam_user.test_user1.name
-}
-
 # Create Test User 2
 resource "aws_iam_user" "test_user2" {
   name = "fullaccess-user"
@@ -124,9 +119,4 @@ resource "aws_iam_user" "test_user2" {
 resource "aws_iam_user_group_membership" "test_user2_membership" {
   user   = aws_iam_user.test_user2.name
   groups = [aws_iam_group.full_access_group.name]
-}
-
-# Create Access Keys for Test User 2
-resource "aws_iam_access_key" "fullaccess_user_access_key" {
-  user = aws_iam_user.test_user2.name
 }

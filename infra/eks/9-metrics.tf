@@ -1,3 +1,4 @@
+# Define the Namespace for Monitoring
 resource "kubernetes_namespace" "monitoring_ns" {
   metadata {
     name = "monitoring"
@@ -5,6 +6,7 @@ resource "kubernetes_namespace" "monitoring_ns" {
   depends_on = [module.eks]
 }
 
+# Helm release for Prometheus and Grafana
 resource "helm_release" "prometheus" {
   name       = "prometheus"
   namespace  = kubernetes_namespace.monitoring_ns.metadata[0].name
@@ -16,16 +18,18 @@ resource "helm_release" "prometheus" {
     value = "10d"
   }
 
+  # Set Prometheus storage configuration
   set {
     name  = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.storageClassName"
-    value = "gp2"
+    value = kubernetes_storage_class.aws_ebs_csi_storage_class.metadata[0].name
   }
 
   set {
     name  = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage"
-    value = "50Gi"
+    value = "10Gi"
   }
 
+  # Set Grafana persistence configuration
   set {
     name  = "grafana.persistence.enabled"
     value = "true"
@@ -33,7 +37,7 @@ resource "helm_release" "prometheus" {
 
   set {
     name  = "grafana.persistence.storageClassName"
-    value = "gp2"
+    value = kubernetes_storage_class.aws_ebs_csi_storage_class.metadata[0].name
   }
 
   set {
@@ -41,5 +45,11 @@ resource "helm_release" "prometheus" {
     value = "10Gi"
   }
 
-  depends_on = [kubernetes_namespace.monitoring_ns]
+  # Set Grafana service type to LoadBalancer
+  set {
+    name  = "grafana.service.type"
+    value = "LoadBalancer"
+  }
+
+  depends_on = [kubernetes_namespace.monitoring_ns, kubernetes_storage_class.aws_ebs_csi_storage_class]
 }

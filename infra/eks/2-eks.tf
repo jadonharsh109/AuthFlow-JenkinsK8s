@@ -94,4 +94,5 @@ module "eks" {
   tags = {
     Environment = "Production"
   }
+
 }
