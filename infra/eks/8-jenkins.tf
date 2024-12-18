@@ -6,6 +6,7 @@ resource "kubernetes_namespace" "jenkins_ns" {
   depends_on = [module.eks]
 }
 
+# Deploy Jenkins using Helm in the Jenkins Namespace
 resource "helm_release" "jenkins" {
   name       = "jenkins"
   repository = "https://charts.jenkins.io"
@@ -32,7 +33,7 @@ resource "helm_release" "jenkins" {
     value = kubernetes_storage_class.aws_ebs_csi_storage_class.metadata[0].name
   }
 
-  // Enable agents and set dynamic configurations
+  # Enable agents and set dynamic configurations
   set {
     name  = "agent.enabled"
     value = "true"
@@ -48,7 +49,7 @@ resource "helm_release" "jenkins" {
     value = "/var/jenkins_home"
   }
 
-  // Set agent configurations if using JCasC or other config methods
+  # Enable Jenkins Configuration as Code (JCasC)
   set {
     name  = "controller.JCasC.enabled"
     value = "true"
@@ -63,13 +64,9 @@ resource "helm_release" "jenkins" {
     EOT
   }
 
-  depends_on = [kubernetes_storage_class.aws_ebs_csi_storage_class, kubernetes_namespace.jenkins_ns, module.eks]
-}
-
-# Get the Jenkins LoadBalancer Service
-data "kubernetes_service" "jenkins_service" {
-  metadata {
-    name      = "jenkins"
-    namespace = kubernetes_namespace.jenkins_ns.metadata[0].name
-  }
+  depends_on = [
+    kubernetes_storage_class.aws_ebs_csi_storage_class,
+    kubernetes_namespace.jenkins_ns,
+    module.eks
+  ]
 }

@@ -1,43 +1,51 @@
-# Specify required providers and their versions for the Terraform configuration
+# Provider Configuration File
+# ===========================
+
+# Specify the required providers and Terraform version
 terraform {
-  required_providers {
-    # Helm provider for managing Helm charts
-    # helm = {
-    #   source  = "hashicorp/helm"
-    #   version = "2.12.1"
-    # }
-
-    # Kubectl provider for interacting with Kubernetes clusters
-    # kubectl = {
-    #   source  = "gavinbunney/kubectl"
-    #   version = "1.14.0"
-    # }
-  }
-
-  # Specify the required Terraform version
   required_version = "~> 1.0"
 }
 
-# Define the AWS provider configuration for the us-east-1 region
+# AWS Provider Configuration
+# ---------------------------
+# This defines the AWS provider and sets the region based on the `region` variable.
 provider "aws" {
   region = var.region
 }
 
+# EKS Cluster Authentication
+# ---------------------------
+# Fetches authentication details for connecting to the EKS cluster.
 data "aws_eks_cluster_auth" "eks" {
   name = module.eks.cluster_name
 }
 
+# Kubernetes Provider Configuration
+# ----------------------------------
+# Configures the Kubernetes provider to interact with the EKS cluster.
 provider "kubernetes" {
-  host                   = module.eks.cluster_endpoint
-  token                  = data.aws_eks_cluster_auth.eks.token
+  # API server endpoint of the EKS cluster
+  host = module.eks.cluster_endpoint
+
+  # Authentication token for accessing the Kubernetes API
+  token = data.aws_eks_cluster_auth.eks.token
+
+  # Base64-decoded cluster CA certificate for secure communication
   cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
 }
 
-// Authenticating Helm to kubernetes cluster
+# Helm Provider Configuration
+# ----------------------------
+# Configures the Helm provider to manage Helm charts in the EKS cluster.
 provider "helm" {
   kubernetes {
-    host                   = module.eks.cluster_endpoint
-    token                  = data.aws_eks_cluster_auth.eks.token
+    # API server endpoint of the EKS cluster
+    host = module.eks.cluster_endpoint
+
+    # Authentication token for accessing the Kubernetes API
+    token = data.aws_eks_cluster_auth.eks.token
+
+    # Base64-decoded cluster CA certificate for secure communication
     cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
   }
 }

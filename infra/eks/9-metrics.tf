@@ -13,12 +13,13 @@ resource "helm_release" "prometheus" {
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "kube-prometheus-stack"
 
+  # Prometheus settings
   set {
     name  = "prometheus.prometheusSpec.retention"
     value = "10d"
   }
 
-  # Set Prometheus storage configuration
+  # Prometheus storage configuration
   set {
     name  = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.storageClassName"
     value = kubernetes_storage_class.aws_ebs_csi_storage_class.metadata[0].name
@@ -29,7 +30,7 @@ resource "helm_release" "prometheus" {
     value = "10Gi"
   }
 
-  # Set Grafana persistence configuration
+  # Grafana settings
   set {
     name  = "grafana.persistence.enabled"
     value = "true"
@@ -45,7 +46,7 @@ resource "helm_release" "prometheus" {
     value = "10Gi"
   }
 
-  # Set Grafana service type to LoadBalancer
+  # Grafana service type to LoadBalancer
   set {
     name  = "grafana.service.type"
     value = "LoadBalancer"

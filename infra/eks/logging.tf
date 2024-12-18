@@ -6,6 +6,7 @@ resource "kubernetes_namespace" "logging_ns" {
   depends_on = [module.eks]
 }
 
+# Elasticsearch Helm Release
 resource "helm_release" "elasticsearch" {
   name       = "elasticsearch"
   namespace  = kubernetes_namespace.logging_ns.metadata[0].name
@@ -35,6 +36,7 @@ resource "helm_release" "elasticsearch" {
   depends_on = [kubernetes_namespace.logging_ns, kubernetes_storage_class.aws_ebs_csi_storage_class]
 }
 
+# Kibana Helm Release
 resource "helm_release" "kibana" {
   name       = "kibana"
   namespace  = kubernetes_namespace.logging_ns.metadata[0].name
@@ -49,33 +51,16 @@ resource "helm_release" "kibana" {
   depends_on = [kubernetes_namespace.logging_ns]
 }
 
-resource "helm_release" "fluentbit" {
-  name       = "fluentbit"
-  namespace  = kubernetes_namespace.logging_ns.metadata[0].name
-  repository = "https://fluent.github.io/helm-charts"
-  chart      = "fluent-bit"
+# # Fluentbit Helm Release
+# resource "helm_release" "fluentbit" {
+#   name       = "fluentbit"
+#   namespace  = kubernetes_namespace.logging_ns.metadata[0].name
+#   repository = "https://fluent.github.io/helm-charts"
+#   chart      = "fluent-bit"
 
-  values = [yamlencode(yamldecode(file("fluentbit-values.yaml")))]
+#   values = [
+#     yamlencode(yamldecode(file("fluentbit-values.yaml")))
+#   ]
 
-  depends_on = [kubernetes_namespace.logging_ns]
-}
-
-
-data "kubernetes_secret" "elasticsearch_credentials" {
-  metadata {
-    name      = "elasticsearch-master-credentials"
-    namespace = kubernetes_namespace.logging_ns.metadata[0].name
-  }
-}
-
-data "kubernetes_service" "kibana_service" {
-  metadata {
-    name      = "kibana"                                         # The service name created by the Kibana Helm chart
-    namespace = kubernetes_namespace.logging_ns.metadata[0].name # The namespace where Kibana is deployed
-  }
-}
-
-
-
-
-
+#   depends_on = [kubernetes_namespace.logging_ns]
+# }
