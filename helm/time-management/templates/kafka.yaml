@@ -1,62 +1,62 @@
 ---
-  apiVersion: apps/v1
-  kind: StatefulSet
-  metadata:
-    name: zookeeper
-    namespace: webapps
-    labels:
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: zookeeper
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: zookeeper
+spec:
+  serviceName: zookeeper
+  replicas: 1
+  selector:
+    matchLabels:
       app: zookeeper
-  spec:
-    serviceName: zookeeper
-    replicas: 1
-    selector:
-      matchLabels:
+  template:
+    metadata:
+      labels:
         app: zookeeper
-    template:
-      metadata:
-        labels:
-          app: zookeeper
-      spec:
-        containers:
-          - name: zookeeper-container
-            image: wurstmeister/zookeeper
-            resources:
-              requests:
-                cpu: 100m
-                memory: 50Mi
-              limits:
-                cpu: 250m
-                memory: 200Mi
-            livenessProbe:
-              exec:
-                command:
-                  - sh
-                  - -c
-                  - 'echo ruok | nc localhost 2181 | grep imok'
-              initialDelaySeconds: 10
-              periodSeconds: 30
-            ports:
-              - containerPort: 2181
-                name: zookeeper-port
-            volumeMounts:
-              - mountPath: /data
-                name: zookeeper-db-storage
-    volumeClaimTemplates:
-      - metadata:
-          name: zookeeper-db-storage
-        spec:
-          accessModes:
-          - ReadWriteOnce
+    spec:
+      containers:
+        - name: zookeeper-container
+          image: wurstmeister/zookeeper
           resources:
             requests:
-              storage: 1Gi
-          storageClassName: ebs-storage
+              cpu: 100m
+              memory: 50Mi
+            limits:
+              cpu: 250m
+              memory: 200Mi
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "echo ruok | nc localhost 2181 | grep imok"
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          ports:
+            - containerPort: 2181
+              name: zookeeper-port
+          volumeMounts:
+            - mountPath: /data
+              name: zookeeper-db-storage
+  volumeClaimTemplates:
+    - metadata:
+        name: zookeeper-db-storage
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: {{ .Values.storageClassName }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: zookeeper-service
-  namespace: webapps
+  namespace: {{ .Values.namespace }}
 spec:
   selector:
     app: zookeeper
@@ -70,7 +70,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: kafka
-  namespace: webapps
+  namespace: {{ .Values.namespace }}
   labels:
     app: kafka
 spec:
@@ -87,7 +87,12 @@ spec:
       initContainers:
         - name: wait-for-zookeeper
           image: busybox
-          command: ['sh', '-c', 'until nc -z zookeeper-service.webapps.svc.cluster.local 2181; do echo waiting for zookeeper; sleep 2; done;']
+          command:
+            [
+              "sh",
+              "-c",
+              "until nc -z zookeeper-service.{{ .Values.namespace }}.svc.cluster.local 2181; do echo waiting for zookeeper; sleep 2; done;",
+            ]
       containers:
         - name: kafka-container
           image: wurstmeister/kafka
@@ -103,7 +108,7 @@ spec:
               command:
                 - sh
                 - -c
-                - 'nc -z localhost 9092'
+                - "nc -z localhost 9092"
             initialDelaySeconds: 10
             periodSeconds: 30
           env:
@@ -130,17 +135,17 @@ spec:
         name: kafka-db-storage
       spec:
         accessModes:
-        - ReadWriteOnce
+          - ReadWriteOnce
         resources:
           requests:
             storage: 1Gi
-        storageClassName: ebs-storage
+        storageClassName: {{ .Values.storageClassName }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: kafka-service
-  namespace: webapps
+  namespace: {{ .Values.namespace }}
 spec:
   selector:
     app: kafka

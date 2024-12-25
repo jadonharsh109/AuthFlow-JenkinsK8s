@@ -59,7 +59,7 @@ resource "helm_release" "kibana" {
 #   chart      = "fluent-bit"
 
 #   values = [
-#     yamlencode(yamldecode(file("fluentbit-values.yaml")))
+#     yamlencode(yamldecode(file("values/fluentbit-values.yaml")))
 #   ]
 
 #   depends_on = [kubernetes_namespace.logging_ns]

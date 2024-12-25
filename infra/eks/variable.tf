@@ -39,7 +39,3 @@ variable "user_names" {
   type        = list(string)
   default     = ["eks_user1", "eks_user2", "eks_user3"]
 }
-
-variable "aws_account_id" {
-  default = "998070853703"
-}
